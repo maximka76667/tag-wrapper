@@ -16,19 +16,24 @@ export function activate(context: ExtensionContext) {
 			return;
 		}
 
-		editor.insertSnippet(new SnippetString("<${1}>${TM_SELECTED_TEXT}</${1}>"));
+		editor.insertSnippet(new SnippetString("<${1}>\n\t${TM_SELECTED_TEXT}\n</${1}>"));
 
-		const editingPromise = new Promise<[Disposable, Selection]>((resolve, reject) => {
+		// When you push Space, extension should add it only in the first <> and deselect second <>
+		// E.g. <p ></p>
+
+		// Code in the promise detects on Space keydown and deletes space in the second </ >
+		// Returns windowLListener and selection in the first <>
+
+		const spaceDetectingPromise = new Promise<[Disposable, Selection]>((resolve, reject) => {
 			const listener = window.onDidChangeTextEditorSelection(e => {
-				const oldSelections = e.selections;
-				const [oldStartingSelection, oldEndSelection] = oldSelections;
-				const { start: oldStartingStartPosition, end: oldStartingEndPosition } = oldStartingSelection;
-				const { start: oldEndStartPosition, end: oldEndEndPosition } = oldEndSelection;
+				const selections = e.selections;
 
-				const sample = editor.document.getText(new Selection(oldStartingStartPosition.translate(undefined, -1), oldStartingEndPosition));
+				const [firstSelection, lastSelection] = selections;
+				const { start: firstStartPosition, end: firstEndPosition } = firstSelection;
+				const { start: secondStartPosition, end: secondEndPosition } = lastSelection;
 
-				console.log(sample.toString());
-
+				// Detect inserting space between first <>
+				const sample = editor.document.getText(new Selection(firstStartPosition.translate(undefined, -1), firstEndPosition));
 				const isSpaceInserted = sample.includes(' ', sample.length - 1);
 
 				if (!isSpaceInserted) {
@@ -36,13 +41,16 @@ export function activate(context: ExtensionContext) {
 				}
 
 				editor.edit((editBuilder) => {
-					editBuilder.delete(new Selection(oldEndStartPosition.translate(0, -1), oldEndEndPosition));
-					resolve([listener, oldStartingSelection]);
+					// Delete space between second <> which we don't need
+					const secondSpaceSelection = new Selection(secondStartPosition.translate(0, -1), secondEndPosition);
+
+					editBuilder.delete(secondSpaceSelection);
+					resolve([listener, firstSelection]);
 				});
 			});
-		})
+		});
 
-		const [windowListener, newSelection] = await editingPromise;
+		const [windowListener, newSelection] = await spaceDetectingPromise;
 
 		windowListener.dispose();
 
