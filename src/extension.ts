@@ -28,6 +28,11 @@ export function activate(context: ExtensionContext) {
 			const listener = window.onDidChangeTextEditorSelection(e => {
 				const selections = e.selections;
 
+
+				// TO DO
+				// fix bag when you select 2 or more texts
+				// do not use first and second and use an array selections
+
 				const [firstSelection, lastSelection] = selections;
 				const { start: firstStartPosition, end: firstEndPosition } = firstSelection;
 				const { start: secondStartPosition, end: secondEndPosition } = lastSelection;
