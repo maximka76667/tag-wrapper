@@ -1,0 +1,9 @@
+{
+    "tag-wrapper": {
+        "prefix": "wrap",
+        "body": [
+            "<${1}>${TM_SELECTED_TEXT}<${2}>"
+        ],
+        "description": "Wraps selected text with tags"
+    }
+}
